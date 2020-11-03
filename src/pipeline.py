@@ -8,26 +8,16 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 
+def load_s3_csv(path):
+    bucket = "s3a://path"
+    return spark.read.csv(path.format(bucket=bucket), header=True, inferSchema=True, sep=',')
+
+
 def read_input():
-    df_calendar = spark.read.format('csv') \
-        .option('header', True) \
-        .option('multiLine', True) \
-        .load('/Users/nagendra/PycharmProjects/nike_test/data/input/calendar.csv')
-
-    df_product = spark.read.format('csv') \
-        .option('header', True) \
-        .option('multiLine', True) \
-        .load('/Users/nagendra/PycharmProjects/nike_test/data/input/product.csv')
-
-    df_sales = spark.read.format('csv') \
-        .option('header', True) \
-        .option('multiLine', True) \
-        .load('/Users/nagendra/PycharmProjects/nike_test/data/input/sales.csv')
-
-    df_store = spark.read.format('csv') \
-        .option('header', True) \
-        .option('multiLine', True) \
-        .load('/Users/nagendra/PycharmProjects/nike_test/data/input/store.csv')
+    df_calendar = load_s3_csv('{bucket}/raw/calendar.csv')
+    df_product = load_s3_csv('{bucket}/raw/product.csv')
+    df_sales = load_s3_csv('{bucket}/raw/sales.csv')
+    df_store = load_s3_csv('{bucket}/raw/store.csv')
 
     return df_calendar, df_product, df_sales, df_store
 
@@ -114,7 +104,15 @@ if __name__ == '__main__':
 
         join_with_spine = join_with_spine.filter((f.col("year") == year) & (f.col("week") == week))
         res_df = format_output(join_with_spine)
-        res_df.coalesce(1).write.format('json').save('consumption.json')
+        res_df.coalesce(1).write.format("json").option("header", "true").mode(
+            "overwrite"
+        ).save(
+            "s3a://path/output/consumption"
+        )
     else:
         res_df = format_output(join_with_spine)
-        res_df.coalesce(1).write.format('json').save('consumption.json')
+        res_df.coalesce(1).write.format("json").option("header", "true").mode(
+            "overwrite"
+        ).save(
+            "s3a://path/output/consumption"
+        )
