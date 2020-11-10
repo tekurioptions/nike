@@ -3,21 +3,22 @@ from pyspark.sql.types import IntegerType
 import sys
 
 spark = SparkSession.builder \
-    .master('local') \
-    .appName("Nike Test") \
+    .master('local')\
     .getOrCreate()
+sc = spark.sparkContext
+sc.setLogLevel("ERROR")
 
 
 def load_s3_csv(path):
-    bucket = "s3a://path"
+    bucket = "s3a://nd-group"
     return spark.read.csv(path.format(bucket=bucket), header=True, inferSchema=True, sep=',')
 
 
 def read_input():
-    df_calendar = load_s3_csv('{bucket}/raw/calendar.csv')
-    df_product = load_s3_csv('{bucket}/raw/product.csv')
-    df_sales = load_s3_csv('{bucket}/raw/sales.csv')
-    df_store = load_s3_csv('{bucket}/raw/store.csv')
+    df_calendar = load_s3_csv('{bucket}/nike/raw/calendar.csv')
+    df_product = load_s3_csv('{bucket}/nike/raw/product.csv')
+    df_sales = load_s3_csv('{bucket}/nike/raw/sales.csv')
+    df_store = load_s3_csv('{bucket}/nike/raw/store.csv')
 
     return df_calendar, df_product, df_sales, df_store
 
@@ -107,12 +108,12 @@ if __name__ == '__main__':
         res_df.coalesce(1).write.format("json").option("header", "true").mode(
             "overwrite"
         ).save(
-            "s3a://path/output/consumption"
+            "s3a://nd-group/nike/output/consumption"
         )
     else:
         res_df = format_output(join_with_spine)
         res_df.coalesce(1).write.format("json").option("header", "true").mode(
             "overwrite"
         ).save(
-            "s3a://path/output/consumption"
+            "s3a://nd-group/nike/output/consumption"
         )
